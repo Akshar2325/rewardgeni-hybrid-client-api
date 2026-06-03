@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Guides - Hybrid Client API Part B</title>
+    <meta name="description"
+        content="Integration guidance for Reward Geni Hybrid Client API Part B including error handling, retries, timeouts, and development dummy IDs.">
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="../index.html" class="logo-link">
+                <img src="../assets/logo.svg" alt="Reward Geni" class="logo">
+                <span class="logo-text" data-config-site-name>Reward Geni Hybrid Client API</span>
+            </a>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <h3 class="nav-section-title">Getting Started</h3>
+                <ul class="nav-list">
+                    <li><a href="../index.html" class="nav-link">Overview</a></li>
+                    <li><a href="getting-started.html" class="nav-link">Quick Start</a></li>
+                    <li><a href="getting-started.html#authentication" class="nav-link">Authentication</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <h3 class="nav-section-title">API Reference</h3>
+                <ul class="nav-list">
+                    <li><a href="api.html" class="nav-link">Overview</a></li>
+                    <li><a href="api.html#get-point-balance" class="nav-link">GET /v1/points/:externalUserId</a></li>
+                    <li><a href="api.html#redeem-points" class="nav-link">POST /v1/redeem</a></li>
+                    <li><a href="api.html#error-codes" class="nav-link">Error Codes</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <h3 class="nav-section-title">Guides</h3>
+                <ul class="nav-list">
+                    <li><a href="guides.html" class="nav-link active">Integration Guide</a></li>
+                    <li><a href="guides.html#error-handling" class="nav-link">Error Handling</a></li>
+                    <li><a href="guides.html#timeouts-and-retry" class="nav-link">Timeouts and Retry</a></li>
+                </ul>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="version-badge" data-config-api-version>v1.0.0</span>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle" aria-label="Open sidebar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18" />
+                </svg>
+            </button>
+            <div class="search-container">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search documentation..."
+                    autocomplete="off">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            <div class="topbar-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-primary postman-download"
+                    data-download-url="../Reward%20Geni%20-%20Hybrid%20Client%20API%20Spec%20%28Part%20B%29.postman_collection.json"
+                    data-download-filename="reward-geni-hybrid-client-api-part-b.postman_collection.json"
+                    aria-label="Download Postman Collection">Download Postman Collection</button>
+            </div>
+        </header>
+
+        <main class="content">
+            <h1>Integration Guide</h1>
+            <p>Implementation guidance for Hybrid Client API Part B in production environments.</p>
+
+            <section class="content-section">
+                <h2 id="error-handling">Error Handling <a href="#error-handling" class="anchor-link">#</a></h2>
+                <p>Always return JSON responses with predictable fields for failures:</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg> Copy</button></div>
+                    <pre><code>{
+  "success": false,
+  "code": "HC_404_001",
+  "message": "User not found"
+}</code></pre>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>HTTP</th>
+                                <th>Code</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>402</td>
+                                <td><code>HC_402_001</code></td>
+                                <td>Insufficient points</td>
+                            </tr>
+                            <tr>
+                                <td>404</td>
+                                <td><code>HC_404_001</code></td>
+                                <td>User not found</td>
+                            </tr>
+                            <tr>
+                                <td>500</td>
+                                <td><code>HC_500_001</code></td>
+                                <td>Internal server error</td>
+                            </tr>
+                            <tr>
+                                <td>503</td>
+                                <td><code>HC_503_001</code></td>
+                                <td>Service unavailable</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="content-section">
+                <h2 id="timeouts-and-retry">Timeouts and Retry <a href="#timeouts-and-retry" class="anchor-link">#</a>
+                </h2>
+                <p>Reward Geni timeout and retry behavior from the Part B spec:</p>
+                <div class="table-wrapper">
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Endpoint</th>
+                                <th>Timeout</th>
+                                <th>Retry</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>GET /v1/points/:externalUserId</code></td>
+                                <td>10 seconds</td>
+                                <td>Up to 2 retries on network errors</td>
+                            </tr>
+                            <tr>
+                                <td><code>POST /v1/redeem</code></td>
+                                <td>15 seconds</td>
+                                <td>Up to 2 retries on network errors</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Recommended Retry Logic on Your API Side</h3>
+                <p>Prefer fast failures over long blocking waits. Keep responses within timeout windows and return
+                    <code>503</code> when downstream systems are unavailable.
+                </p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">JavaScript</span><button class="copy-btn"><svg
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg> Copy</button></div>
+                    <pre><code>function serviceUnavailable(message) {
+  return {
+    status: 503,
+    body: {
+      success: false,
+      code: 'HC_503_001',
+      message
+    }
+  };
+}
+
+// Example usage:
+// return serviceUnavailable('Redemption service temporarily unavailable. Please try again later.');</code></pre>
+                </div>
+            </section>
+
+            <section class="content-section">
+                <h2 id="idempotency">Idempotency and Consistency <a href="#idempotency" class="anchor-link">#</a></h2>
+                <p>Use <code>orderId</code> from the redeem request as an idempotency key to avoid duplicate deductions
+                    for retried requests.</p>
+                <ul style="list-style:disc;padding-left:24px;margin-bottom:20px;color:var(--text-secondary);">
+                    <li style="margin-bottom:8px;">If the same <code>orderId</code> arrives again, return the original
+                        successful result.</li>
+                    <li style="margin-bottom:8px;">Store and return your <code>transactionId</code> consistently.</li>
+                    <li style="margin-bottom:8px;">Ensure <code>remainingPoints</code> reflects the final ledger value
+                        after deduction.</li>
+                </ul>
+            </section>
+
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; <span class="footer-year"></span> Reward Geni. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="../index.html">Home</a>
+                    <a href="getting-started.html">Getting Started</a>
+                    <a href="api.html">API Reference</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <script src="../config.js"></script>
+    <script src="../script.js"></script>
+</body>
+
+</html>

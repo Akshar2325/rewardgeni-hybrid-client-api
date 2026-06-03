@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - Hybrid Client API Part B</title>
+    <meta name="description"
+        content="Quick start for Reward Geni Hybrid Client API Part B. Configure x-api-key auth and implement GET /v1/points/:externalUserId and POST /v1/redeem.">
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="../index.html" class="logo-link">
+                <img src="../assets/logo.svg" alt="Reward Geni" class="logo">
+                <span class="logo-text" data-config-site-name>Reward Geni Hybrid Client API</span>
+            </a>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <h3 class="nav-section-title">Getting Started</h3>
+                <ul class="nav-list">
+                    <li><a href="../index.html" class="nav-link">Overview</a></li>
+                    <li><a href="getting-started.html" class="nav-link active">Quick Start</a></li>
+                    <li><a href="getting-started.html#authentication" class="nav-link">Authentication</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <h3 class="nav-section-title">API Reference</h3>
+                <ul class="nav-list">
+                    <li><a href="api.html" class="nav-link">Overview</a></li>
+                    <li><a href="api.html#get-point-balance" class="nav-link">GET /v1/points/:externalUserId</a></li>
+                    <li><a href="api.html#redeem-points" class="nav-link">POST /v1/redeem</a></li>
+                    <li><a href="api.html#error-codes" class="nav-link">Error Codes</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <h3 class="nav-section-title">Guides</h3>
+                <ul class="nav-list">
+                    <li><a href="guides.html" class="nav-link">Integration Guide</a></li>
+                    <li><a href="guides.html#timeouts-and-retry" class="nav-link">Timeouts and Retry</a></li>
+                </ul>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="version-badge" data-config-api-version>v1.0.0</span>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle" aria-label="Open sidebar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18" />
+                </svg>
+            </button>
+            <div class="search-container">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search documentation..."
+                    autocomplete="off">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            <div class="topbar-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-primary postman-download"
+                    data-download-url="../Reward%20Geni%20-%20Hybrid%20Client%20API%20Spec%20%28Part%20B%29.postman_collection.json"
+                    data-download-filename="reward-geni-hybrid-client-api-part-b.postman_collection.json"
+                    aria-label="Download Postman Collection">Download Postman Collection</button>
+            </div>
+        </header>
+
+        <main class="content">
+            <h1>Quick Start</h1>
+            <p>Implement the two Part B endpoints on your server so Reward Geni can read and redeem points.</p>
+
+            <h2 id="prerequisites">Prerequisites <a href="#prerequisites" class="anchor-link">#</a></h2>
+            <ul class="step-list"
+                style="list-style:disc;padding-left:24px;margin-bottom:20px;color:var(--text-secondary);">
+                <li style="margin-bottom:8px;">A server endpoint base URL that Reward Geni can call</li>
+                <li style="margin-bottom:8px;">Your <code>hybridClientApiKey</code> configured with Reward Geni</li>
+                <li style="margin-bottom:8px;">Support for JSON request and response payloads</li>
+            </ul>
+
+            <h2 id="authentication">Authentication <a href="#authentication" class="anchor-link">#</a></h2>
+            <p>Reward Geni includes these headers in every request:</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Headers</span>
+                    <button class="copy-btn"
+                        data-code="x-api-key: sk_live_your_api_key&#10;Content-Type: application/json">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><code>x-api-key: sk_live_your_api_key
+Content-Type: application/json</code></pre>
+            </div>
+
+            <h2 id="base-url">Base URL <a href="#base-url" class="anchor-link">#</a></h2>
+            <p>
+                Reward Geni admin stores your endpoint root as <code>hybridClientApiBaseUrl</code>.
+                Example base URL:
+            </p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">URL</span>
+                    <button class="copy-btn" data-code="https://your-api.example.com">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><code>https://your-api.example.com</code></pre>
+            </div>
+
+            <h2 id="implement-endpoints">Implement Required Endpoints <a href="#implement-endpoints"
+                    class="anchor-link">#</a></h2>
+            <ol class="steps">
+                <li class="step">
+                    <h3>GET /v1/points/:externalUserId</h3>
+                    <p>Return <code>externalUserId</code>, <code>totalPoints</code>, and <code>blocks</code> exactly as
+                        documented.</p>
+                </li>
+                <li class="step">
+                    <h3>POST /v1/redeem</h3>
+                    <p>Deduct points and return <code>success</code>, <code>transactionId</code>,
+                        <code>pointsRedeemed</code>, and <code>remainingPoints</code>.
+                    </p>
+                </li>
+                <li class="step">
+                    <h3>Return standard errors</h3>
+                    <p>Support <code>402</code>, <code>404</code>, <code>500</code>, and <code>503</code> with Part B
+                        error code payloads.</p>
+                </li>
+            </ol>
+
+            <h2 id="first-request-example">First Request Example (Balance) <a href="#first-request-example"
+                    class="anchor-link">#</a></h2>
+            <div class="code-tabs">
+                <div class="code-tabs-header">
+                    <button class="code-tab-btn active">cURL</button>
+                    <button class="code-tab-btn">JavaScript Fetch</button>
+                </div>
+                <div class="code-tab-content active">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">cURL</span>
+                            <button class="copy-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <pre><code>curl -X GET "https://your-api.example.com/v1/points/EMP001" \
+  -H "x-api-key: sk_live_your_api_key"</code></pre>
+                    </div>
+                </div>
+                <div class="code-tab-content">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">JavaScript</span>
+                            <button class="copy-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <pre><code>const response = await fetch('https://your-api.example.com/v1/points/EMP001', {
+  method: 'GET',
+  headers: {
+    'x-api-key': 'sk_live_your_api_key'
+  }
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h2 id="next-steps">Next Steps <a href="#next-steps" class="anchor-link">#</a></h2>
+            <div class="features-grid next-steps-grid">
+                <div class="feature-card next-step-card">
+                    <h3>API Reference</h3>
+                    <p>Full request and response schemas for GET balance and POST redeem endpoints.</p>
+                    <a href="api.html" class="feature-link next-step-link">Open API Reference</a>
+                </div>
+                <div class="feature-card next-step-card">
+                    <h3>Integration Guide</h3>
+                    <p>Timeouts, retry behavior, error handling, and operational guidance.</p>
+                    <a href="guides.html" class="feature-link next-step-link">Open Guides</a>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; <span class="footer-year"></span> Reward Geni. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="../index.html">Home</a>
+                    <a href="api.html">API Reference</a>
+                    <a href="guides.html">Guides</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <script src="../config.js"></script>
+    <script src="../script.js"></script>
+</body>
+
+</html>

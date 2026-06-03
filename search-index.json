@@ -1,0 +1,142 @@
+[
+  {
+    "title": "Overview - Hybrid Client API Part B",
+    "section": "Home",
+    "url": "index.html",
+    "content": "Reward Geni Hybrid Client API Part B documentation for point balance sync and point redemption.",
+    "keywords": "reward geni hybrid client api part b overview"
+  },
+  {
+    "title": "Authentication",
+    "section": "Home",
+    "url": "index.html#authentication",
+    "content": "Reward Geni calls your API with x-api-key and application/json.",
+    "keywords": "authentication x-api-key header"
+  },
+  {
+    "title": "Base URL",
+    "section": "Home",
+    "url": "index.html#base-url",
+    "content": "Base URL is configured as hybridClientApiBaseUrl for the client account.",
+    "keywords": "base url hybridClientApiBaseUrl"
+  },
+  {
+    "title": "Endpoints Overview",
+    "section": "Home",
+    "url": "index.html#endpoints-overview",
+    "content": "GET /v1/points/:externalUserId and POST /v1/redeem are the two required Part B endpoints.",
+    "keywords": "endpoints points redeem get post"
+  },
+  {
+    "title": "Error Code Reference",
+    "section": "Home",
+    "url": "index.html#error-codes",
+    "content": "HC_402_001, HC_404_001, HC_500_001, HC_503_001.",
+    "keywords": "error codes 402 404 500 503"
+  },
+  {
+    "title": "Timeouts and Retry",
+    "section": "Home",
+    "url": "index.html#timeouts-and-retry",
+    "content": "Point balance timeout is 10 seconds, redeem timeout is 15 seconds, retry up to 2 times on network errors.",
+    "keywords": "timeouts retry network"
+  },
+  {
+    "title": "Getting Started",
+    "section": "Getting Started",
+    "url": "docs/getting-started.html",
+    "content": "Quick Start implementation for Hybrid Client API Part B.",
+    "keywords": "getting started quick start"
+  },
+  {
+    "title": "Getting Started - Prerequisites",
+    "section": "Getting Started",
+    "url": "docs/getting-started.html#prerequisites",
+    "content": "Prerequisites for implementing Part B endpoints and authentication.",
+    "keywords": "prerequisites requirements"
+  },
+  {
+    "title": "Getting Started - Authentication",
+    "section": "Getting Started",
+    "url": "docs/getting-started.html#authentication",
+    "content": "Request headers include x-api-key and Content-Type application/json.",
+    "keywords": "authentication headers x-api-key"
+  },
+  {
+    "title": "Getting Started - Base URL",
+    "section": "Getting Started",
+    "url": "docs/getting-started.html#base-url",
+    "content": "Reward Geni admin stores your endpoint root as hybridClientApiBaseUrl.",
+    "keywords": "base url hybridClientApiBaseUrl"
+  },
+  {
+    "title": "Getting Started - Implement Endpoints",
+    "section": "Getting Started",
+    "url": "docs/getting-started.html#implement-endpoints",
+    "content": "Implement GET /v1/points/:externalUserId and POST /v1/redeem with standard errors.",
+    "keywords": "implement endpoints points redeem"
+  },
+  {
+    "title": "Getting Started - First Request Example",
+    "section": "Getting Started",
+    "url": "docs/getting-started.html#first-request-example",
+    "content": "First balance request examples using cURL and JavaScript Fetch.",
+    "keywords": "first request example curl fetch"
+  },
+  {
+    "title": "API Reference Overview",
+    "section": "API Reference",
+    "url": "docs/api.html",
+    "content": "Complete request and response references for Part B endpoints.",
+    "keywords": "api reference"
+  },
+  {
+    "title": "GET /v1/points/:externalUserId",
+    "section": "API Reference",
+    "url": "docs/api.html#get-point-balance",
+    "content": "Returns externalUserId, totalPoints, and blocks including blockId, description, points, transactionType, expiresAt.",
+    "keywords": "get points externalUserId totalPoints blocks"
+  },
+  {
+    "title": "POST /v1/redeem",
+    "section": "API Reference",
+    "url": "docs/api.html#redeem-points",
+    "content": "Deduct points with externalUserId, points, orderId, orderNumber, orderType, orderDate, orderItem, description.",
+    "keywords": "post redeem points orderId orderItem"
+  },
+  {
+    "title": "API Error Codes",
+    "section": "API Reference",
+    "url": "docs/api.html#error-codes",
+    "content": "HC_402_001 insufficient points, HC_404_001 user not found, HC_500_001 internal server error, HC_503_001 service unavailable.",
+    "keywords": "hc_402_001 hc_404_001 hc_500_001 hc_503_001"
+  },
+  {
+    "title": "Integration Guide",
+    "section": "Guides",
+    "url": "docs/guides.html",
+    "content": "Implementation guidance for Part B in production.",
+    "keywords": "guides integration"
+  },
+  {
+    "title": "Guide - Error Handling",
+    "section": "Guides",
+    "url": "docs/guides.html#error-handling",
+    "content": "Return structured JSON errors with success, code, and message.",
+    "keywords": "error handling json"
+  },
+  {
+    "title": "Guide - Timeouts and Retry",
+    "section": "Guides",
+    "url": "docs/guides.html#timeouts-and-retry",
+    "content": "Timeout and retry expectations for balance and redeem endpoints.",
+    "keywords": "timeouts retry"
+  },
+  {
+    "title": "Guide - Idempotency",
+    "section": "Guides",
+    "url": "docs/guides.html#idempotency",
+    "content": "Use orderId as idempotency key to avoid duplicate deduction on retries.",
+    "keywords": "idempotency orderId duplicate"
+  }
+]
