@@ -42,6 +42,7 @@
                 <h3 class="nav-section-title">API Reference</h3>
                 <ul class="nav-list">
                     <li><a href="api.html" class="nav-link active">Overview</a></li>
+                    <li><a href="api.html#generate-token" class="nav-link">POST /auth/token</a></li>
                     <li><a href="api.html#get-point-balance" class="nav-link">GET /v1/points/:externalUserId</a></li>
                     <li><a href="api.html#redeem-points" class="nav-link">POST /v1/redeem</a></li>
                     <li><a href="api.html#error-codes" class="nav-link">Error Codes</a></li>
@@ -103,6 +104,18 @@
 
             <section class="content-section">
                 <h2 id="authentication">Authentication <a href="#authentication" class="anchor-link">#</a></h2>
+                <p>Reward Geni uses a two-step token-based authentication flow:</p>
+                <ol style="margin-bottom:16px;padding-left:20px;">
+                    <li style="margin-bottom:8px;"><strong>Step 1:</strong> Call <code>POST /auth/token</code> with
+                        <code>x-client-id</code> + <code>x-client-secret</code> headers to get a Bearer token.
+                    </li>
+                    <li style="margin-bottom:8px;"><strong>Step 2:</strong> Use the token in
+                        <code>Authorization: Bearer &lt;token&gt;</code> header + <code>x-rg-secret</code> header for
+                        all API requests.
+                    </li>
+                </ol>
+                <p>Reward Geni caches the token in Redis and reuses it until expiry. A new token is generated
+                    automatically when expired.</p>
                 <div class="table-wrapper">
                     <table class="api-table">
                         <thead>
@@ -114,9 +127,14 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><code>x-api-key</code></td>
+                                <td><code>Authorization</code></td>
                                 <td>Yes</td>
-                                <td><code>&lt;your hybridClientApiKey&gt;</code></td>
+                                <td><code>Bearer &lt;accessToken&gt;</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>x-rg-secret</code></td>
+                                <td>Yes</td>
+                                <td><code>&lt;your hybridRgSecret&gt;</code></td>
                             </tr>
                             <tr>
                                 <td><code>Content-Type</code></td>
@@ -125,6 +143,194 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <section class="content-section">
+                <h2 id="generate-token">POST /auth/token <a href="#generate-token" class="anchor-link">#</a></h2>
+                <div class="endpoint-block">
+                    <div class="endpoint-header">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-url">/auth/token</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <p class="endpoint-description">Reward Geni calls this endpoint to obtain a Bearer token before
+                            making any authenticated API requests. The token is cached in Redis with TTL matching
+                            <code>expiresIn</code>.
+                        </p>
+
+                        <h4>Request Headers</h4>
+                        <p>Credentials are passed as HTTP headers, not in the request body:</p>
+                        <div class="table-wrapper">
+                            <table class="api-table">
+                                <thead>
+                                    <tr>
+                                        <th>Header</th>
+                                        <th>Required</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>Content-Type</code></td>
+                                        <td>Yes</td>
+                                        <td><code>application/json</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>x-client-id</code></td>
+                                        <td>Yes</td>
+                                        <td>Your <code>hybridClientId</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>x-client-secret</code></td>
+                                        <td>Yes</td>
+                                        <td>Your <code>hybridClientSecret</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Code Examples</h4>
+                        <div class="code-tabs">
+                            <div class="code-tabs-header">
+                                <button class="code-tab-btn active">cURL</button>
+                                <button class="code-tab-btn">JavaScript Fetch</button>
+                                <button class="code-tab-btn">Node.js Axios</button>
+                            </div>
+                            <div class="code-tab-content active">
+                                <div class="code-block">
+                                    <div class="code-header"><span class="code-lang">cURL</span><button
+                                            class="copy-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                            </svg> Copy</button></div>
+                                    <pre><code>curl -X POST "https://your-api.example.com/auth/token" \
+    -H "Content-Type: application/json" \
+    -H "x-client-id: your-hybrid-client-id" \
+    -H "x-client-secret: your-hybrid-client-secret"</code></pre>
+                                </div>
+                            </div>
+                            <div class="code-tab-content">
+                                <div class="code-block">
+                                    <div class="code-header"><span class="code-lang">JavaScript</span><button
+                                            class="copy-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                            </svg> Copy</button></div>
+                                    <pre><code>const response = await fetch('https://your-api.example.com/auth/token', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'x-client-id': 'your-hybrid-client-id',
+        'x-client-secret': 'your-hybrid-client-secret'
+    }
+});
+
+const data = await response.json();
+console.log(data.accessToken);</code></pre>
+                                </div>
+                            </div>
+                            <div class="code-tab-content">
+                                <div class="code-block">
+                                    <div class="code-header"><span class="code-lang">Node.js</span><button
+                                            class="copy-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                            </svg> Copy</button></div>
+                                    <pre><code>const axios = require('axios');
+
+const { data } = await axios.post(
+    'https://your-api.example.com/auth/token',
+    {},
+    {
+        headers: {
+            'Content-Type': 'application/json',
+            'x-client-id': 'your-hybrid-client-id',
+            'x-client-secret': 'your-hybrid-client-secret'
+        }
+    }
+);
+
+console.log(data.accessToken);</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>Success Response (200)</h4>
+                        <div class="code-block">
+                            <div class="code-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg> Copy</button></div>
+                            <pre><code>{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "expiresIn": 3600,
+  "tokenType": "Bearer"
+}</code></pre>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="api-table">
+                                <thead>
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>accessToken</code></td>
+                                        <td>string</td>
+                                        <td>JWT or opaque Bearer token</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>expiresIn</code></td>
+                                        <td>number</td>
+                                        <td>Token lifetime in seconds (e.g., 3600 = 1 hour)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>tokenType</code></td>
+                                        <td>string</td>
+                                        <td>Always <code>Bearer</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Error Responses</h4>
+                        <div class="code-block">
+                            <div class="code-header"><span class="code-lang">400 Bad Request</span><button
+                                    class="copy-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg> Copy</button></div>
+                            <pre><code>{
+  "success": false,
+  "code": "HC_400_001",
+  "message": "Missing required headers: x-client-id, x-client-secret"
+}</code></pre>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-header"><span class="code-lang">401 Unauthorized</span><button
+                                    class="copy-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg> Copy</button></div>
+                            <pre><code>{
+  "success": false,
+  "code": "HC_401_001",
+  "message": "Invalid client credentials"
+}</code></pre>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -156,7 +362,8 @@
                                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                                             </svg> Copy</button></div>
                                     <pre><code>curl -X GET "https://your-api.example.com/v1/points/EMP001" \
-    -H "x-api-key: sk_live_your_api_key"</code></pre>
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+    -H "x-rg-secret: your-hybrid-rg-secret"</code></pre>
                                 </div>
                             </div>
                             <div class="code-tab-content">
@@ -170,7 +377,8 @@
                                     <pre><code>const response = await fetch('https://your-api.example.com/v1/points/EMP001', {
     method: 'GET',
     headers: {
-        'x-api-key': 'sk_live_your_api_key'
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...',
+        'x-rg-secret': 'your-hybrid-rg-secret'
     }
 });
 
@@ -192,7 +400,8 @@ const { data } = await axios.get(
     'https://your-api.example.com/v1/points/EMP001',
     {
         headers: {
-            'x-api-key': 'sk_live_your_api_key'
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...',
+            'x-rg-secret': 'your-hybrid-rg-secret'
         }
     }
 );
@@ -325,7 +534,8 @@ console.log(data);</code></pre>
                                             </svg> Copy</button></div>
                                     <pre><code>curl -X POST "https://your-api.example.com/v1/redeem" \
     -H "Content-Type: application/json" \
-    -H "x-api-key: sk_live_your_api_key" \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+    -H "x-rg-secret: your-hybrid-rg-secret" \
     -d '{
         "externalUserId": "EMP001",
         "points": 500,
@@ -358,7 +568,8 @@ console.log(data);</code></pre>
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'sk_live_your_api_key'
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...',
+        'x-rg-secret': 'your-hybrid-rg-secret'
     },
     body: JSON.stringify({
         externalUserId: 'EMP001',
@@ -417,7 +628,8 @@ const { data } = await axios.post(
     {
         headers: {
             'Content-Type': 'application/json',
-            'x-api-key': 'sk_live_your_api_key'
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...',
+            'x-rg-secret': 'your-hybrid-rg-secret'
         }
     }
 );
@@ -514,6 +726,20 @@ console.log(data);</code></pre>
                             </tr>
                         </thead>
                         <tbody>
+                            <tr>
+                                <td><code>HC_400_001</code></td>
+                                <td>400</td>
+                                <td>Missing required headers for <code>/auth/token</code></td>
+                                <td><code>{"success":false,"code":"HC_400_001","message":"Missing required headers: x-client-id, x-client-secret"}</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>HC_401_001</code></td>
+                                <td>401</td>
+                                <td>Invalid client credentials for <code>/auth/token</code></td>
+                                <td><code>{"success":false,"code":"HC_401_001","message":"Invalid client credentials"}</code>
+                                </td>
+                            </tr>
                             <tr>
                                 <td><code>HC_402_001</code></td>
                                 <td>402</td>

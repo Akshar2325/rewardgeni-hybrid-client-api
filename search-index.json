@@ -10,8 +10,8 @@
     "title": "Authentication",
     "section": "Home",
     "url": "index.html#authentication",
-    "content": "Reward Geni calls your API with x-api-key and application/json.",
-    "keywords": "authentication x-api-key header"
+    "content": "Reward Geni uses token-based authentication: POST /auth/token for Bearer token, then Authorization header for API calls.",
+    "keywords": "authentication token bearer auth"
   },
   {
     "title": "Base URL",
@@ -59,8 +59,8 @@
     "title": "Getting Started - Authentication",
     "section": "Getting Started",
     "url": "docs/getting-started.html#authentication",
-    "content": "Request headers include x-api-key and Content-Type application/json.",
-    "keywords": "authentication headers x-api-key"
+    "content": "Token-based authentication: POST /auth/token, then Authorization: Bearer + x-rg-secret headers.",
+    "keywords": "authentication headers token bearer"
   },
   {
     "title": "Getting Started - Base URL",
@@ -82,6 +82,13 @@
     "url": "docs/getting-started.html#first-request-example",
     "content": "First balance request examples using cURL and JavaScript Fetch.",
     "keywords": "first request example curl fetch"
+  },
+  {
+    "title": "POST /auth/token",
+    "section": "API Reference",
+    "url": "docs/api.html#generate-token",
+    "content": "Generate a Bearer token using clientId and clientSecret for subsequent API calls.",
+    "keywords": "auth token generate bearer authentication"
   },
   {
     "title": "API Reference Overview",

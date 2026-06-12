@@ -4,14 +4,15 @@ Static documentation site for the Reward Geni Hybrid Client API Part B.
 
 This site documents the endpoints your HYBRID client server must implement:
 
-- GET /v1/points/:externalUserId
-- POST /v1/redeem
+- **POST /auth/token** — Generate a Bearer token using `x-client-id` + `x-client-secret` headers
+- **GET /v1/points/:externalUserId** — Fetch a user's point balance grouped by blocks
+- **POST /v1/redeem** — Deduct points from a user's balance before order creation
 
 It also includes:
 
-- x-api-key authentication requirements
-- success and error response examples
-- error code reference
+- token-based authentication flow (POST /auth/token → Bearer token)
+- success and error response examples for every endpoint
+- error code reference (HC_400, HC_401, HC_402, HC_404, HC_500, HC_503)
 - timeout and retry behavior
 - Postman collection download
 

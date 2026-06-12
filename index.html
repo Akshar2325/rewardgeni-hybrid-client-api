@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reward Geni - Hybrid Client API (Part B)</title>
     <meta name="description"
-        content="Part B Hybrid Client API documentation for Reward Geni. Includes x-api-key authentication, point balance sync, point redemption, error codes, and retries.">
+        content="Part B Hybrid Client API documentation for Reward Geni. Includes token-based authentication, point balance sync, point redemption, error codes, and retries.">
     <meta name="keywords"
-        content="Reward Geni, Hybrid Client API, Part B, x-api-key, points, redemption, API documentation">
+        content="Reward Geni, Hybrid Client API, Part B, token authentication, points, redemption, API documentation">
     <meta name="author" content="Reward Geni">
     <meta property="og:title" content="Reward Geni - Hybrid Client API (Part B)">
     <meta property="og:description"
@@ -50,6 +50,7 @@
                 <h3 class="nav-section-title">API Reference</h3>
                 <ul class="nav-list">
                     <li><a href="docs/api.html" class="nav-link">Overview</a></li>
+                    <li><a href="docs/api.html#generate-token" class="nav-link">POST /auth/token</a></li>
                     <li><a href="docs/api.html#get-point-balance" class="nav-link">GET /v1/points/:externalUserId</a>
                     </li>
                     <li><a href="docs/api.html#redeem-points" class="nav-link">POST /v1/redeem</a></li>
@@ -123,8 +124,17 @@
             </section>
 
             <section class="content-section">
-                <h2 id="authentication">Authentication <a href="#authentication" class="anchor-link">#</a></h2>
-                <p>Reward Geni calls your API using the following request headers:</p>
+                <h2 id="authentication">Authentication (Token-Based) <a href="#authentication" class="anchor-link">#</a>
+                </h2>
+                <p>Reward Geni uses a two-step authentication flow:</p>
+                <ol class="steps" style="margin-bottom:24px;padding-left:20px;">
+                    <li style="margin-bottom:12px;"><strong>Generate Token:</strong> Call <code>POST /auth/token</code>
+                        with <code>clientId</code> and <code>clientSecret</code> to obtain a Bearer token.</li>
+                    <li style="margin-bottom:12px;"><strong>Authenticated Calls:</strong> Use
+                        <code>Authorization: Bearer &lt;token&gt;</code> +
+                        <code>x-rg-secret: &lt;hybridRgSecret&gt;</code> headers for all API requests.
+                    </li>
+                </ol>
                 <div class="table-wrapper">
                     <table class="api-table">
                         <thead>
@@ -135,8 +145,12 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><code>x-api-key</code></td>
-                                <td>Your <code>hybridClientApiKey</code></td>
+                                <td><code>Authorization</code></td>
+                                <td><code>Bearer &lt;accessToken&gt;</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>x-rg-secret</code></td>
+                                <td>Your <code>hybridRgSecret</code></td>
                             </tr>
                             <tr>
                                 <td><code>Content-Type</code></td>
@@ -145,6 +159,8 @@
                         </tbody>
                     </table>
                 </div>
+                <p style="margin-top:12px;">Reward Geni caches the token in Redis and reuses it until expiry. A new
+                    token is generated automatically when the current one expires.</p>
             </section>
 
             <section class="content-section">

@@ -1,15 +1,110 @@
 {
   "info": {
-    "_postman_id": "5793509f-521c-4e74-aa22-316d78b2c0f8",
     "name": "Reward Geni - Hybrid Client API Spec (Part B)",
-    "description": "**Hybrid Client API — Part B**\n\nThis collection specifies the API endpoints that the HYBRID client **must implement** on their server.\n\nReward Geni will call these endpoints for:\n- **Point Balance Sync**: On SSO login, Reward Geni fetches the user's current point balance.\n- **Point Redemption**: Before an order is placed, Reward Geni requests a points deduction.\n\n## Authentication\nReward Geni will send requests with:\n- Header: `x-api-key: <your hybridClientApiKey>`\n- Content-Type: `application/json`\n\n## Base URL\nConfigured by Reward Geni admin as `hybridClientApiBaseUrl` for your client account.\n",
+    "description": "**Hybrid Client API — Part B**\n\nThis collection specifies the API endpoints that the HYBRID client **must implement** on their server.\n\nReward Geni will call these endpoints for:\n- **Token Generation**: Obtain a Bearer token before making API calls.\n- **Point Balance Sync**: On SSO login, Reward Geni fetches the user's current point balance.\n- **Point Redemption**: Before an order is placed, Reward Geni requests a points deduction.\n\n## Authentication (Token-Based)\nReward Geni uses a two-step authentication:\n1. **Generate Token**: `POST /auth/token` with `x-client-id` + `x-client-secret` headers → returns Bearer token\n2. **API Calls**: Use `Authorization: Bearer <token>` + `x-rg-secret: <hybridRgSecret>` headers\n\nReward Geni caches the token in Redis with a unique key per client (`hybrid_token:{hybridClientId}`) and reuses it until expiry. When expired, a new token is generated automatically.\n\n## Base URL\nConfigured by Reward Geni admin as `hybridClientApiBaseUrl` for your client account.\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "45159333",
-    "_collection_link": "https://go.postman.co/collection/45159333-5793509f-521c-4e74-aa22-316d78b2c0f8?source=collection_link"
+    "_exporter_id": "reward-geni"
   },
+  "variable": [
+    {
+      "key": "clientBaseUrl",
+      "value": "https://your-api.example.com",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "your-hybrid-client-id",
+      "type": "string"
+    },
+    {
+      "key": "clientSecret",
+      "value": "your-hybrid-client-secret",
+      "type": "string"
+    },
+    {
+      "key": "rgSecret",
+      "value": "your-hybrid-rg-secret",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "externalUserId",
+      "value": "EMP001",
+      "type": "string"
+    }
+  ],
   "item": [
     {
-      "name": "Point Balance",
+      "name": "1. Authentication",
+      "description": "Generate a Bearer token to access the Hybrid Client API.",
+      "item": [
+        {
+          "name": "Generate Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-client-id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "x-client-secret",
+                "value": "{{clientSecret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{clientBaseUrl}}/auth/token",
+              "host": ["{{clientBaseUrl}}"],
+              "path": ["auth", "token"]
+            },
+            "description": "Generate an access token. Credentials are passed via `x-client-id` and `x-client-secret` headers (not request body). The returned token should be set as the `accessToken` collection variable for subsequent requests."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIs...\",\n  \"expiresIn\": 3600,\n  \"tokenType\": \"Bearer\"\n}",
+              "description": "**Response Fields:**\n- `accessToken`: JWT or opaque Bearer token\n- `expiresIn`: Token lifetime in seconds\n- `tokenType`: Always `Bearer`"
+            },
+            {
+              "name": "Bad Request (400)",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"code\": \"HC_400_001\",\n  \"message\": \"Missing required headers: x-client-id, x-client-secret\"\n}",
+              "description": "Returned when required headers are missing or invalid."
+            },
+            {
+              "name": "Unauthorized (401)",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"code\": \"HC_401_001\",\n  \"message\": \"Invalid client credentials\"\n}",
+              "description": "Returned when `x-client-id` or `x-client-secret` is incorrect."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Point Balance",
+      "description": "Reward Geni calls this endpoint after SSO login to fetch the user's current point balance.",
       "item": [
         {
           "name": "Get Point Balance",
@@ -17,136 +112,59 @@
             "method": "GET",
             "header": [
               {
-                "key": "x-api-key",
-                "value": "{{apiKey}}"
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "x-rg-secret",
+                "value": "{{rgSecret}}"
               }
             ],
             "url": {
               "raw": "{{clientBaseUrl}}/v1/points/{{externalUserId}}",
-              "host": [
-                "{{clientBaseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "points",
-                "{{externalUserId}}"
-              ]
+              "host": ["{{clientBaseUrl}}"],
+              "path": ["v1", "points", "{{externalUserId}}"]
             },
             "description": "Return the user's point balance grouped by blocks/transactions."
           },
           "response": [
             {
               "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/points/{{externalUserId}}",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "points",
-                    "{{externalUserId}}"
-                  ]
-                },
-                "description": "Return the user's point balance grouped by blocks/transactions."
-              },
               "status": "OK",
               "code": 200,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
-              "body": "{\n  \"externalUserId\": \"EMP001\",\n  \"totalPoints\": 1300,\n  \"blocks\": [\n    {\n      \"blockId\": \"BLOCK_001\",\n      \"description\": \"Welcome bonus\",\n      \"points\": 1000,\n      \"transactionType\": \"CREDIT\",\n      \"expiresAt\": \"2025-04-01T00:00:00Z\"\n    },\n    {\n      \"blockId\": \"BLOCK_002\",\n      \"description\": \"Monthly loyalty reward\",\n      \"points\": 500,\n      \"transactionType\": \"CREDIT\",\n      \"expiresAt\": null\n    },\n    {\n      \"blockId\": \"BLOCK_003\",\n      \"description\": \"Points redeemed for order #ORD-20250101-ABC123\",\n      \"points\": -200,\n      \"transactionType\": \"DEBIT\",\n      \"expiresAt\": null\n    }\n  ]\n}"
+              "body": "{\n  \"externalUserId\": \"EMP001\",\n  \"totalPoints\": 1300,\n  \"blocks\": [\n    {\n      \"blockId\": \"BLOCK_001\",\n      \"description\": \"Welcome bonus\",\n      \"points\": 1000,\n      \"transactionType\": \"CREDIT\",\n      \"expiresAt\": \"2025-04-01T00:00:00Z\"\n    },\n    {\n      \"blockId\": \"BLOCK_002\",\n      \"description\": \"Monthly loyalty reward\",\n      \"points\": 500,\n      \"transactionType\": \"CREDIT\",\n      \"expiresAt\": null\n    },\n    {\n      \"blockId\": \"BLOCK_003\",\n      \"description\": \"Points redeemed for order #ORD-20250101-ABC123\",\n      \"points\": -200,\n      \"transactionType\": \"DEBIT\",\n      \"expiresAt\": null\n    }\n  ]\n}",
+              "description": "**Response Fields:**\n- `externalUserId`: Matches the requested userId\n- `totalPoints`: Sum of all block points\n- `blocks`: Array of point blocks with:\n  - `blockId`: Unique identifier for this block (used for dedup)\n  - `description`: Human-readable description\n  - `points`: Number of points in this block\n  - `transactionType`: Type of transaction (e.g. CREDIT)\n  - `expiresAt`: ISO date when these points expire (null = no expiry)"
             },
             {
               "name": "User Not Found",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/points/{{externalUserId}}",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "points",
-                    "{{externalUserId}}"
-                  ]
-                },
-                "description": "Return the user's point balance grouped by blocks/transactions."
-              },
               "status": "Not Found",
               "code": 404,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
-              "body": "{\n  \"success\": false,\n  \"code\": \"HC_404_001\",\n  \"message\": \"User not found\"\n}"
+              "body": "{\n  \"success\": false,\n  \"code\": \"HC_404_001\",\n  \"message\": \"User not found\"\n}",
+              "description": "Return HTTP 404 if the externalUserId does not exist in your system."
             },
             {
               "name": "Service Unavailable",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/points/{{externalUserId}}",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "points",
-                    "{{externalUserId}}"
-                  ]
-                },
-                "description": "Return the user's point balance grouped by blocks/transactions."
-              },
               "status": "Service Unavailable",
               "code": 503,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
-              "body": "{\n  \"success\": false,\n  \"code\": \"HC_503_001\",\n  \"message\": \"Points service temporarily unavailable. Please try again later.\"\n}"
+              "body": "{\n  \"success\": false,\n  \"code\": \"HC_503_001\",\n  \"message\": \"Points service temporarily unavailable. Please try again later.\"\n}",
+              "description": "Return HTTP 503 when the points service is temporarily down. Reward Geni will retry after a short delay."
             }
           ]
         }
-      ],
-      "description": "Reward Geni calls this endpoint after SSO login to fetch the user's current point balance."
+      ]
     },
     {
-      "name": "Point Redemption",
+      "name": "3. Point Redemption",
+      "description": "Reward Geni calls this endpoint before creating an order to deduct points from the user.",
       "item": [
         {
           "name": "Redeem Points",
@@ -158,8 +176,12 @@
                 "value": "application/json"
               },
               {
-                "key": "x-api-key",
-                "value": "{{apiKey}}"
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "x-rg-secret",
+                "value": "{{rgSecret}}"
               }
             ],
             "body": {
@@ -168,255 +190,74 @@
             },
             "url": {
               "raw": "{{clientBaseUrl}}/v1/redeem",
-              "host": [
-                "{{clientBaseUrl}}"
-              ],
-              "path": [
-                "v1",
-                "redeem"
-              ]
+              "host": ["{{clientBaseUrl}}"],
+              "path": ["v1", "redeem"]
             },
             "description": "Deduct specified points from the user's balance.\n\n**Request Fields:**\n- `externalUserId`: The user to debit\n- `points`: Number of points to deduct\n- `orderId`: Reward Geni's order reference (for idempotency)\n- `orderNumber`: Reward Geni's order number\n- `orderType`: Type of order (PHYSICAL / DIGITAL)\n- `orderDate`: ISO date of order creation\n- `orderItem`: Details of the first/reference order item\n  - `id`: Order item ID\n  - `orderType`: Item order type\n  - `quantity`: Item quantity\n  - `product`: Product details\n    - `productId`: Product ID\n    - `productName`: Product name\n- `description`: Optional reason for the deduction"
           },
           "response": [
             {
               "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"externalUserId\": \"EMP001\",\n  \"points\": 500,\n  \"orderId\": \"ORD-20250101-ABC123\",\n  \"orderNumber\": \"ORD-20250101-ABC123\",\n  \"orderType\": \"PHYSICAL\",\n  \"orderDate\": \"2025-01-01T10:00:00.000Z\",\n  \"orderItem\": {\n    \"id\": \"item-uuid-here\",\n    \"orderType\": \"PHYSICAL\",\n    \"quantity\": 2,\n    \"product\": {\n      \"productId\": \"prod-uuid-here\",\n      \"productName\": \"Premium Wireless Headphones\"\n    }\n  },\n  \"description\": \"Redeem 500 points for order ORD-20250101-ABC123\"\n}"
-                },
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/redeem",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "redeem"
-                  ]
-                },
-                "description": "Deduct specified points from the user's balance.\n\n**Request Fields:**\n- `externalUserId`: The user to debit\n- `points`: Number of points to deduct\n- `orderId`: Reward Geni's order reference (for idempotency)\n- `orderNumber`: Reward Geni's order number\n- `orderType`: Type of order (PHYSICAL / DIGITAL)\n- `orderDate`: ISO date of order creation\n- `orderItem`: Details of the first/reference order item\n  - `id`: Order item ID\n  - `orderType`: Item order type\n  - `quantity`: Item quantity\n  - `product`: Product details\n    - `productId`: Product ID\n    - `productName`: Product name\n- `description`: Optional reason for the deduction"
-              },
               "status": "OK",
               "code": 200,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
-              "body": "{\n  \"success\": true,\n  \"transactionId\": \"TXN_CLIENT_12345\",\n  \"pointsRedeemed\": 500,\n  \"remainingPoints\": 1000\n}"
+              "body": "{\n  \"success\": true,\n  \"transactionId\": \"TXN_CLIENT_12345\",\n  \"pointsRedeemed\": 500,\n  \"remainingPoints\": 1000\n}",
+              "description": "**Response Fields:**\n- `success`: Must be `true` for successful redemption\n- `transactionId`: Your internal transaction reference\n- `pointsRedeemed`: The actual number of points deducted\n- `remainingPoints`: User's point balance after deduction"
             },
             {
               "name": "Insufficient Points",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"externalUserId\": \"EMP001\",\n  \"points\": 500,\n  \"orderId\": \"ORD-20250101-ABC123\",\n  \"orderNumber\": \"ORD-20250101-ABC123\",\n  \"orderType\": \"PHYSICAL\",\n  \"orderDate\": \"2025-01-01T10:00:00.000Z\",\n  \"orderItem\": {\n    \"id\": \"item-uuid-here\",\n    \"orderType\": \"PHYSICAL\",\n    \"quantity\": 2,\n    \"product\": {\n      \"productId\": \"prod-uuid-here\",\n      \"productName\": \"Premium Wireless Headphones\"\n    }\n  },\n  \"description\": \"Redeem 500 points for order ORD-20250101-ABC123\"\n}"
-                },
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/redeem",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "redeem"
-                  ]
-                },
-                "description": "Deduct specified points from the user's balance.\n\n**Request Fields:**\n- `externalUserId`: The user to debit\n- `points`: Number of points to deduct\n- `orderId`: Reward Geni's order reference (for idempotency)\n- `orderNumber`: Reward Geni's order number\n- `orderType`: Type of order (PHYSICAL / DIGITAL)\n- `orderDate`: ISO date of order creation\n- `orderItem`: Details of the first/reference order item\n  - `id`: Order item ID\n  - `orderType`: Item order type\n  - `quantity`: Item quantity\n  - `product`: Product details\n    - `productId`: Product ID\n    - `productName`: Product name\n- `description`: Optional reason for the deduction"
-              },
               "status": "Payment Required",
               "code": 402,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
-              "body": "{\n  \"success\": false,\n  \"code\": \"HC_402_001\",\n  \"message\": \"Insufficient points for redemption\",\n  \"availablePoints\": 300\n}"
+              "body": "{\n  \"success\": false,\n  \"code\": \"HC_402_001\",\n  \"message\": \"Insufficient points for redemption\",\n  \"availablePoints\": 300\n}",
+              "description": "Return HTTP 402 when the user doesn't have enough points. Reward Geni will cancel the order and notify the user."
             },
             {
               "name": "User Not Found",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"externalUserId\": \"EMP001\",\n  \"points\": 500,\n  \"orderId\": \"ORD-20250101-ABC123\",\n  \"orderNumber\": \"ORD-20250101-ABC123\",\n  \"orderType\": \"PHYSICAL\",\n  \"orderDate\": \"2025-01-01T10:00:00.000Z\",\n  \"orderItem\": {\n    \"id\": \"item-uuid-here\",\n    \"orderType\": \"PHYSICAL\",\n    \"quantity\": 2,\n    \"product\": {\n      \"productId\": \"prod-uuid-here\",\n      \"productName\": \"Premium Wireless Headphones\"\n    }\n  },\n  \"description\": \"Redeem 500 points for order ORD-20250101-ABC123\"\n}"
-                },
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/redeem",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "redeem"
-                  ]
-                },
-                "description": "Deduct specified points from the user's balance.\n\n**Request Fields:**\n- `externalUserId`: The user to debit\n- `points`: Number of points to deduct\n- `orderId`: Reward Geni's order reference (for idempotency)\n- `orderNumber`: Reward Geni's order number\n- `orderType`: Type of order (PHYSICAL / DIGITAL)\n- `orderDate`: ISO date of order creation\n- `orderItem`: Details of the first/reference order item\n  - `id`: Order item ID\n  - `orderType`: Item order type\n  - `quantity`: Item quantity\n  - `product`: Product details\n    - `productId`: Product ID\n    - `productName`: Product name\n- `description`: Optional reason for the deduction"
-              },
               "status": "Not Found",
               "code": 404,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
-              "body": "{\n  \"success\": false,\n  \"code\": \"HC_404_001\",\n  \"message\": \"User not found\"\n}"
+              "body": "{\n  \"success\": false,\n  \"code\": \"HC_404_001\",\n  \"message\": \"User not found\"\n}",
+              "description": "Return HTTP 404 if the externalUserId does not exist in your system."
             },
             {
               "name": "Server Error",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"externalUserId\": \"EMP001\",\n  \"points\": 500,\n  \"orderId\": \"ORD-20250101-ABC123\",\n  \"orderNumber\": \"ORD-20250101-ABC123\",\n  \"orderType\": \"PHYSICAL\",\n  \"orderDate\": \"2025-01-01T10:00:00.000Z\",\n  \"orderItem\": {\n    \"id\": \"item-uuid-here\",\n    \"orderType\": \"PHYSICAL\",\n    \"quantity\": 2,\n    \"product\": {\n      \"productId\": \"prod-uuid-here\",\n      \"productName\": \"Premium Wireless Headphones\"\n    }\n  },\n  \"description\": \"Redeem 500 points for order ORD-20250101-ABC123\"\n}"
-                },
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/redeem",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "redeem"
-                  ]
-                },
-                "description": "Deduct specified points from the user's balance.\n\n**Request Fields:**\n- `externalUserId`: The user to debit\n- `points`: Number of points to deduct\n- `orderId`: Reward Geni's order reference (for idempotency)\n- `orderNumber`: Reward Geni's order number\n- `orderType`: Type of order (PHYSICAL / DIGITAL)\n- `orderDate`: ISO date of order creation\n- `orderItem`: Details of the first/reference order item\n  - `id`: Order item ID\n  - `orderType`: Item order type\n  - `quantity`: Item quantity\n  - `product`: Product details\n    - `productId`: Product ID\n    - `productName`: Product name\n- `description`: Optional reason for the deduction"
-              },
               "status": "Internal Server Error",
               "code": 500,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
               "body": "{\n  \"success\": false,\n  \"code\": \"HC_500_001\",\n  \"message\": \"Internal server error\"\n}"
             },
             {
               "name": "Service Unavailable",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"externalUserId\": \"EMP001\",\n  \"points\": 500,\n  \"orderId\": \"ORD-20250101-ABC123\",\n  \"orderNumber\": \"ORD-20250101-ABC123\",\n  \"orderType\": \"PHYSICAL\",\n  \"orderDate\": \"2025-01-01T10:00:00.000Z\",\n  \"orderItem\": {\n    \"id\": \"item-uuid-here\",\n    \"orderType\": \"PHYSICAL\",\n    \"quantity\": 2,\n    \"product\": {\n      \"productId\": \"prod-uuid-here\",\n      \"productName\": \"Premium Wireless Headphones\"\n    }\n  },\n  \"description\": \"Redeem 500 points for order ORD-20250101-ABC123\"\n}"
-                },
-                "url": {
-                  "raw": "{{clientBaseUrl}}/v1/redeem",
-                  "host": [
-                    "{{clientBaseUrl}}"
-                  ],
-                  "path": [
-                    "v1",
-                    "redeem"
-                  ]
-                },
-                "description": "Deduct specified points from the user's balance.\n\n**Request Fields:**\n- `externalUserId`: The user to debit\n- `points`: Number of points to deduct\n- `orderId`: Reward Geni's order reference (for idempotency)\n- `orderNumber`: Reward Geni's order number\n- `orderType`: Type of order (PHYSICAL / DIGITAL)\n- `orderDate`: ISO date of order creation\n- `orderItem`: Details of the first/reference order item\n  - `id`: Order item ID\n  - `orderType`: Item order type\n  - `quantity`: Item quantity\n  - `product`: Product details\n    - `productId`: Product ID\n    - `productName`: Product name\n- `description`: Optional reason for the deduction"
-              },
               "status": "Service Unavailable",
               "code": 503,
-              "_postman_previewlanguage": "Text",
               "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+                { "key": "Content-Type", "value": "application/json" }
               ],
-              "cookie": [],
-              "body": "{\n  \"success\": false,\n  \"code\": \"HC_503_001\",\n  \"message\": \"Redemption service temporarily unavailable. Please try again later.\"\n}"
+              "body": "{\n  \"success\": false,\n  \"code\": \"HC_503_001\",\n  \"message\": \"Redemption service temporarily unavailable. Please try again later.\"\n}",
+              "description": "Return HTTP 503 when the redemption service is temporarily down. Reward Geni will retry after a short delay."
             }
           ]
         }
-      ],
-      "description": "Reward Geni calls this endpoint before creating an order to deduct points from the user."
+      ]
     },
     {
       "name": "Error Codes Reference",
-      "item": [],
-      "description": "Standard error codes used by Reward Geni when calling the Hybrid Client API.\n\n| Code | HTTP Status | When |\n| --- | --- | --- |\n| HC_402_001 | 402 | Insufficient points for redemption |\n| HC_404_001 | 404 | User not found |\n| HC_500_001 | 500 | Internal server error |\n| HC_503_001 | 503 | Service unavailable (balance or redemption) |"
+      "description": "Standard error codes used by Reward Geni when calling the Hybrid Client API.\n\n| Code | HTTP Status | When |\n| --- | --- | --- |\n| HC_400_001 | 400 | Missing required headers for `/auth/token` |\n| HC_401_001 | 401 | Invalid client credentials for `/auth/token` |\n| HC_402_001 | 402 | Insufficient points for redemption |\n| HC_404_001 | 404 | User not found |\n| HC_500_001 | 500 | Internal server error |\n| HC_503_001 | 503 | Service unavailable (balance or redemption) |",
+      "item": []
     },
     {
       "name": "Reference: Rate Limits & Timeouts",
-      "item": [],
-      "description": "**Timeouts:**\n- Point Balance: 10 seconds\n- Redeem Points: 15 seconds\n\n**Retry:** Reward Geni will retry up to 2 times on network errors.\n\n**Recommended Rate Limit:** We suggest the client API supports at least 100 requests per minute."
-    }
-  ],
-  "variable": [
-    {
-      "key": "clientBaseUrl",
-      "value": "https://your-api.example.com"
-    },
-    {
-      "key": "apiKey",
-      "value": "sk_live_your_api_key"
-    },
-    {
-      "key": "externalUserId",
-      "value": "EMP001"
+      "description": "**Timeouts:**\n- Generate Token: 10 seconds\n- Point Balance: 10 seconds\n- Redeem Points: 15 seconds\n\n**Retry:** Reward Geni will retry up to 2 times on network errors.\n\n**Recommended Rate Limit:** We suggest the client API supports at least 100 requests per minute.",
+      "item": []
     }
   ]
 }
